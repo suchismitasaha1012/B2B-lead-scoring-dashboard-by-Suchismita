@@ -325,51 +325,43 @@ avg_engagement_customers = df["Engagement_Score"].mean()
 # TABS: KPI CARDS
 # ------------------------------------------------------------
 tab_lead, tab_value = st.tabs(["📈 Lead Scoring & Funnel", "💰 Customer Value & Retention"])
-# ---------------------------------------------------------
-# 🔝 TOP 10 PRIORITY LEADS (BASED ON MODEL PREDICTION)
-# ---------------------------------------------------------
 
-st.markdown("### 🔝 Top 10 Priority Leads")
+# =========================================================
+# 🔝 TOP 10 PRIORITY LEADS (BASED ON MODEL AI SCORE)
+# =========================================================
+st.markdown("## 🔝 Top 10 Priority Leads")
 
-# if you named the scored dataframe differently, change `leads_scored`
-df_scored = leads_scored.copy()
-
-# make sure the AI score column name below matches your code
-AI_COL = "AI_Score"          # e.g. "AI_Score", "Lead_Score", "score" etc.
-
-if AI_COL not in df_scored.columns:
-    st.info("AI score not found. Make sure the scoring step runs before this block.")
+if df is None:
+    st.info("Upload a CSV file to see the Top 10 leads.")
 else:
-    # sort by AI score (highest first) and pick top 10
-    top10_cols = [
-        "Lead_ID",
-        "Industry",
-        "Lead_Source",
-        "Company_Size",
-        "Annual_Revenue_INR_Lakhs",
-        "Engagement_Score",
-        "Meetings",
-        AI_COL,
-    ]
+    # Make sure we have model scores on this dataframe
+    df_scored = score_leads(df).copy()   # use your existing scoring function
 
-    # keep only columns that actually exist (avoids key errors)
-    top10_cols = [c for c in top10_cols if c in df_scored.columns]
+    if "AI_Score" not in df_scored.columns:
+        st.warning("AI score could not be computed. Check the input columns.")
+    else:
+        # Sort by AI_Score (highest first) and keep top 10
+        cols_for_view = [
+            "Lead_ID",
+            "Industry",
+            "Lead_Source",
+            "Company_Size",
+            "Engagement_Score",
+            "AI_Score",
+            "Converted",
+        ]
+        cols_for_view = [c for c in cols_for_view if c in df_scored.columns]
 
-    top10 = (
-        df_scored
-        .sort_values(AI_COL, ascending=False)
-        .head(10)[top10_cols]
-        .rename(columns={AI_COL: "Predicted_Conversion_Probability"})
-    )
+        top10 = (
+            df_scored
+            .sort_values("AI_Score", ascending=False)
+            .head(10)[cols_for_view]
+            .reset_index(drop=True)
+        )
+        top10.index = top10.index + 1  # show 1–10 instead of 0–9
 
-    st.dataframe(
-        top10.style.format({
-            "Annual_Revenue_INR_Lakhs": "{:,.0f}",
-            "Predicted_Conversion_Probability": "{:.1%}",
-        }),
-        use_container_width=True,
-        hide_index=True,
-    )
+        st.dataframe(top10, use_container_width=True)
+
 
 with tab_lead:
     st.markdown('<div class="section-header">Lead Scoring & Funnel KPIs</div>', unsafe_allow_html=True)
