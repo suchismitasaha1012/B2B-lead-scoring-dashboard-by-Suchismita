@@ -326,81 +326,14 @@ avg_engagement_customers = df["Engagement_Score"].mean()
 # ------------------------------------------------------------
 tab_lead, tab_value = st.tabs(["📈 Lead Scoring & Funnel", "💰 Customer Value & Retention"])
 
-# ================================
-# 🏆 TOP 10 PRIORITY LEADS
-# ================================
+# 🔥 TOP 10 PRIORITY LEADS
+st.subheader("⬆️ Top 10 Priority Leads")
 
-st.markdown("### 🏆 Top 10 Priority Leads")
-
-if df is None or df.empty:
-    st.info("AI scores not yet computed. Upload a valid CSV dataset to view Top 10 leads.")
+if "AI_Score" in df.columns:
+    top10 = df.sort_values("AI_Score", ascending=False).head(10)
+    st.dataframe(top10[["Lead_ID", "Industry", "AI_Score", "Engagement_Score", "Converted"]])
 else:
-    df_top = df.copy()
-
-    # --- 1. Build a numeric priority score from existing columns ---
-    def norm(series: pd.Series) -> pd.Series:
-        """Simple min–max normalisation to 0–1."""
-        if series.max() == series.min():
-            # avoid division by zero when all values are same
-            return pd.Series(0.5, index=series.index, dtype="float64")
-        return (series - series.min()) / (series.max() - series.min())
-
-    score = 0
-
-    # Positive contributors (higher is better)
-    if "Engagement_Score" in df_top.columns:
-        score += 0.35 * norm(df_top["Engagement_Score"])
-    if "Website_Visits" in df_top.columns:
-        score += 0.10 * norm(df_top["Website_Visits"])
-    if "Email_Clicks" in df_top.columns:
-        score += 0.10 * norm(df_top["Email_Clicks"])
-    if "Meetings" in df_top.columns:
-        score += 0.15 * norm(df_top["Meetings"])
-    if "Annual_Revenue_INR_Lakhs" in df_top.columns:
-        score += 0.15 * norm(df_top["Annual_Revenue_INR_Lakhs"])
-    if "CLV" in df_top.columns:
-        score += 0.15 * norm(df_top["CLV"])
-
-    # Negative contributors (lower is better)
-    if "Decision_Time_Days" in df_top.columns:
-        score += 0.10 * (1 - norm(df_top["Decision_Time_Days"]))
-    if "Churn_Risk" in df_top.columns:
-        score += 0.15 * (1 - norm(df_top["Churn_Risk"]))
-
-    df_top["Priority_Score"] = score
-
-    # --- 2. Pick Top 10 leads by this score ---
-    top10 = (
-        df_top.sort_values("Priority_Score", ascending=False)
-              .head(10)
-              .copy()
-    )
-
-    # Select columns to display (only keep ones that exist in the file)
-    display_cols = [
-        "Lead_ID",
-        "Industry",
-        "Lead_Source",
-        "Engagement_Score",
-        "Website_Visits",
-        "Email_Clicks",
-        "Meetings",
-        "Annual_Revenue_INR_Lakhs",
-        "CLV",
-        "Decision_Time_Days",
-        "Churn_Risk",
-        "Priority_Score",
-    ]
-    display_cols = [c for c in display_cols if c in top10.columns]
-
-    st.dataframe(
-        top10[display_cols]
-            .style.format({"Priority_Score": "{:.2f}"}).background_gradient(
-                subset=["Priority_Score"], cmap="YlOrRd"
-            ),
-        use_container_width=True,
-        hide_index=True,
-    )
+    st.info("AI Score not found. Upload a dataset containing 'AI_Score' OR enable auto-score generation.")
 
 with tab_lead:
     st.markdown('<div class="section-header">Lead Scoring & Funnel KPIs</div>', unsafe_allow_html=True)
