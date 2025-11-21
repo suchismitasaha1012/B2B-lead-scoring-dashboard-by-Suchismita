@@ -181,7 +181,7 @@ y = model_df["Converted"].astype(int)
 
 preprocess = ColumnTransformer(
     transformers=[
-        ("cat", OneHotEncoder(handle_unknown="ignore", sparse=False), cat_cols),
+        ("cat", OneHotEncoder(handle_unknown="ignore"), cat_cols),
     ],
     remainder="passthrough",
 )
