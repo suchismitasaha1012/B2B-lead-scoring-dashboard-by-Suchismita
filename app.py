@@ -325,30 +325,51 @@ avg_engagement_customers = df["Engagement_Score"].mean()
 # TABS: KPI CARDS
 # ------------------------------------------------------------
 tab_lead, tab_value = st.tabs(["📈 Lead Scoring & Funnel", "💰 Customer Value & Retention"])
-# =============================
-# 🔥 TOP 10 LEADS (BASED ON AI SCORE)
-# =============================
-st.subheader("🔝 Top 10 Priority Leads")
+# ---------------------------------------------------------
+# 🔝 TOP 10 PRIORITY LEADS (BASED ON MODEL PREDICTION)
+# ---------------------------------------------------------
 
-# Ensure sorted leads exist
-if "AI_Lead_Score" in df.columns:
-    top_10 = df.sort_values(by="AI_Lead_Score", ascending=False).head(10)
+st.markdown("### 🔝 Top 10 Priority Leads")
 
-    # Only show important business fields
-    cols_to_show = [
-        "Lead_ID", "Industry", "Company_Size", "Location",
-        "Engagement_Score", "AI_Lead_Score", "Converted"
+# if you named the scored dataframe differently, change `leads_scored`
+df_scored = leads_scored.copy()
+
+# make sure the AI score column name below matches your code
+AI_COL = "AI_Score"          # e.g. "AI_Score", "Lead_Score", "score" etc.
+
+if AI_COL not in df_scored.columns:
+    st.info("AI score not found. Make sure the scoring step runs before this block.")
+else:
+    # sort by AI score (highest first) and pick top 10
+    top10_cols = [
+        "Lead_ID",
+        "Industry",
+        "Lead_Source",
+        "Company_Size",
+        "Annual_Revenue_INR_Lakhs",
+        "Engagement_Score",
+        "Meetings",
+        AI_COL,
     ]
 
-    st.dataframe(
-        top_10[cols_to_show],
-        use_container_width=True,
-        hide_index=True
+    # keep only columns that actually exist (avoids key errors)
+    top10_cols = [c for c in top10_cols if c in df_scored.columns]
+
+    top10 = (
+        df_scored
+        .sort_values(AI_COL, ascending=False)
+        .head(10)[top10_cols]
+        .rename(columns={AI_COL: "Predicted_Conversion_Probability"})
     )
 
-    st.markdown("These are the **highest-priority leads**, sorted by predicted AI score.")
-else:
-    st.info("AI scores not yet computed. Upload a valid dataset to view Top 10 leads.")
+    st.dataframe(
+        top10.style.format({
+            "Annual_Revenue_INR_Lakhs": "{:,.0f}",
+            "Predicted_Conversion_Probability": "{:.1%}",
+        }),
+        use_container_width=True,
+        hide_index=True,
+    )
 
 with tab_lead:
     st.markdown('<div class="section-header">Lead Scoring & Funnel KPIs</div>', unsafe_allow_html=True)
