@@ -3,607 +3,568 @@ import pandas as pd
 import numpy as np
 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import RandomForestClassifier
 
 import plotly.express as px
 
-# --------------------------------------------------
-# 1. PAGE CONFIG & BASIC STYLING
-# --------------------------------------------------
+# ------------------------------------------------------------
+# PAGE CONFIG & GLOBAL STYLE
+# ------------------------------------------------------------
 st.set_page_config(
-    page_title="AI-Driven B2B Lead Scoring & Customer Value Dashboard",
+    page_title="AI B2B Lead Scoring & Customer Value Dashboard",
     layout="wide",
 )
 
-# Custom CSS for colourful cards & cleaner look
 st.markdown(
     """
     <style>
-    .big-title {
-        font-size: 32px !important;
-        font-weight: 800 !important;
-        color: #0f4c75;
-    }
-    .sub-text {
-        color: #555555;
-        font-size: 14px;
-    }
-    .metric-card {
-        background: linear-gradient(135deg, #e3f2fd, #e8f5e9);
-        padding: 14px 18px;
-        border-radius: 14px;
-        border: 1px solid #bbdefb;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .metric-label {
-        font-size: 13px;
-        color: #455a64;
-        margin-bottom: 4px;
-    }
-    .metric-value {
-        font-size: 24px;
-        font-weight: 700;
-        color: #0d47a1;
-    }
-    .metric-caption {
-        font-size: 11px;
-        color: #78909c;
-    }
+    /* Give breathing space at the top so title is never cut */
     .block-container {
-        padding-top: 1.5rem;
-        padding-bottom: 1rem;
+        padding-top: 2.2rem !important;
+        padding-bottom: 2rem !important;
     }
+
+    .big-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+        font-size: 0.95rem;
+        color: #475569;
+        margin-bottom: 1.2rem;
+    }
+
+    .metric-row {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.2rem;
+    }
+
+    .metric-card {
+        flex: 1 1 220px;
+        background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+        border-radius: 0.9rem;
+        padding: 0.9rem 1.05rem 0.95rem 1.05rem;
+        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+        color: #0f172a;
+    }
+
+    .metric-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #64748b;
+        margin-bottom: 0.35rem;
+    }
+
+    .metric-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        color: #0f172a;
+    }
+
+    .metric-caption {
+        font-size: 0.73rem;
+        color: #6b7280;
+    }
+
+    .chart-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 0.3rem;
+    }
+
+    .section-header {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-top: 0.8rem;
+        margin-bottom: 0.4rem;
+    }
+
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-
-# --------------------------------------------------
-# 2. HEADER
-# --------------------------------------------------
+# ------------------------------------------------------------
+# HEADER
+# ------------------------------------------------------------
 st.markdown(
     '<div class="big-title">AI-Driven B2B Lead Scoring & Customer Value Dashboard</div>',
     unsafe_allow_html=True,
 )
 st.markdown(
-    '<div class="sub-text">Upload a single CSV containing both lead and customer attributes to see AI scores, funnel metrics, and value insights.</div>',
+    '<div class="subtitle">'
+    "Upload a single CSV containing lead and customer attributes to explore AI scores, funnel efficiency, and value-driven insights."
+    "</div>",
     unsafe_allow_html=True,
 )
 
-st.write("")
-
-# --------------------------------------------------
-# 3. FILE UPLOADER (ONLY ONE)
-# --------------------------------------------------
-uploaded = st.file_uploader(
+# ------------------------------------------------------------
+# FILE UPLOAD
+# ------------------------------------------------------------
+uploaded_file = st.file_uploader(
     "Upload combined B2B lead & customer CSV",
     type=["csv"],
     help=(
-        "The file should include columns: Lead_ID, Industry, Lead_Source, "
-        "Engagement_Score, Meetings, Decision_Time_Days, Converted, "
-        "CLV, Tenure_Months, Churn_Risk, Revenue (₹)."
+        "Expected useful columns (any missing ones will simply disable the related KPIs): "
+        "Lead_ID, Industry, Company_Size, Annual_Revenue_INR_Lakhs, Location, Website_Visits, "
+        "Email_Clicks, Meetings, Lead_Source, Engagement_Score, Product_Interest, "
+        "Decision_Time_Days, Converted, CLV, Revenue, Tenure_Months, Churn_Risk."
     ),
 )
 
-if uploaded is None:
-    st.info("⬆️ Upload your CSV to generate the AI lead scores and dashboard.")
+if uploaded_file is None:
+    st.info(
+        "⬆️ Upload your CSV to see AI scoring, funnel metrics, and customer value charts.\n\n"
+        "Make sure you at least have **Converted** (0/1) so the AI model can learn."
+    )
     st.stop()
 
-# Read data
-df = pd.read_csv(uploaded)
+df = pd.read_csv(uploaded_file)
 
-# --------------------------------------------------
-# 4. BASIC COLUMN SAFETY CHECKS
-# --------------------------------------------------
-required_base = [
-    "Lead_ID",
+# ------------------------------------------------------------
+# BASIC COLUMN SANITY
+# ------------------------------------------------------------
+required_for_model = [
     "Industry",
+    "Company_Size",
+    "Annual_Revenue_INR_Lakhs",
+    "Location",
+    "Website_Visits",
+    "Email_Clicks",
+    "Meetings",
     "Lead_Source",
     "Engagement_Score",
-    "Meetings",
+    "Product_Interest",
     "Decision_Time_Days",
     "Converted",
 ]
-required_clv = ["CLV", "Tenure_Months", "Churn_Risk", "Revenue"]
 
-missing_base = [c for c in required_base if c not in df.columns]
-missing_clv = [c for c in required_clv if c not in df.columns]
-
-if missing_base:
-    st.error(f"These required columns are missing from your file: {missing_base}")
+missing_for_model = [c for c in required_for_model if c not in df.columns]
+if missing_for_model:
+    st.error(
+        "The following columns are required to train the AI lead-scoring model and are missing "
+        f"from your file: **{', '.join(missing_for_model)}**.\n\n"
+        "Please add them to your dataset and re-upload."
+    )
     st.stop()
 
-if missing_clv:
-    st.warning(
-        f"Some customer-value columns are missing ({missing_clv}). "
-        "Lead scoring & funnel will still work, but a few value KPIs/charts may be blank."
-    )
+# ------------------------------------------------------------
+# AI LEAD SCORING MODEL
+# ------------------------------------------------------------
+model_df = df.copy()
 
-# --------------------------------------------------
-# 5. BUILD SIMPLE AI LEAD SCORING MODEL
-# --------------------------------------------------
-def build_lead_scores(data: pd.DataFrame) -> pd.DataFrame:
-    """Train a simple model on this batch and return dataframe with Lead_Score and Priority_Level."""
+numeric_cols = [
+    "Company_Size",
+    "Annual_Revenue_INR_Lakhs",
+    "Website_Visits",
+    "Email_Clicks",
+    "Meetings",
+    "Engagement_Score",
+    "Decision_Time_Days",
+]
+cat_cols = ["Industry", "Location", "Lead_Source", "Product_Interest"]
 
-    model_df = data.copy()
+X = model_df[numeric_cols + cat_cols]
+y = model_df["Converted"].astype(int)
 
-    # Features & target
-    feature_cols_cat = ["Industry", "Lead_Source"]
-    feature_cols_num = ["Engagement_Score", "Meetings", "Decision_Time_Days"]
-
-    X = model_df[feature_cols_cat + feature_cols_num]
-    y = model_df["Converted"].astype(int)
-
-    # Preprocess: OneHot for categoricals (no sparse flag to avoid version issues)
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("cat", OneHotEncoder(handle_unknown="ignore"), feature_cols_cat),
-        ],
-        remainder="passthrough",
-    )
-
-    clf = RandomForestClassifier(
-        n_estimators=200,
-        max_depth=None,
-        random_state=42,
-        n_jobs=-1,
-    )
-
-    pipe = Pipeline(steps=[("prep", preprocessor), ("model", clf)])
-
-    # Robust train/test split
-    try:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
-        )
-        pipe.fit(X_train, y_train)
-    except ValueError:
-        # In case of very small or all-same data, fit on full data
-        pipe.fit(X, y)
-
-    # Get probability of conversion as AI score
-    proba = pipe.predict_proba(X)[:, 1]
-    model_df["Lead_Score"] = (proba * 100).round(2)
-
-    # Priority buckets
-    def to_bucket(score):
-        if score >= 70:
-            return "High"
-        elif score >= 40:
-            return "Medium"
-        else:
-            return "Low"
-
-    model_df["Priority_Level"] = model_df["Lead_Score"].apply(to_bucket)
-    return model_df
-
-
-df = build_lead_scores(df)
-
-# --------------------------------------------------
-# 6. DERIVED COLUMNS FOR VALUE ANALYSIS
-# --------------------------------------------------
-if "CLV" in df.columns:
-    # High / Medium / Low value segmentation based on CLV quantiles
-    q_low = df["CLV"].quantile(0.33)
-    q_high = df["CLV"].quantile(0.66)
-
-    def value_segment(clv):
-        if clv >= q_high:
-            return "High"
-        elif clv >= q_low:
-            return "Medium"
-        else:
-            return "Low"
-
-    df["Value_Segment"] = df["CLV"].apply(value_segment)
-
-if "Churn_Risk" in df.columns:
-    df["High_Churn"] = (df["Churn_Risk"] >= 0.6).astype(int)
-
-# --------------------------------------------------
-# 7. KPI CALCULATIONS
-# --------------------------------------------------
-converted_mask = df["Converted"] == 1
-high_priority_mask = df["Priority_Level"] == "High"
-
-# 1. Overall Lead Conversion Rate
-overall_conv = converted_mask.mean() * 100
-
-# 2. Conversion Rate of High-Priority Leads
-if high_priority_mask.any():
-    high_priority_conv = (df[high_priority_mask]["Converted"] == 1).mean() * 100
-else:
-    high_priority_conv = np.nan
-
-# 3. Share of New Customers from High-Priority Leads
-if converted_mask.any():
-    share_new_from_high = (
-        df[high_priority_mask & converted_mask].shape[0]
-        / df[converted_mask].shape[0]
-        * 100
-    )
-else:
-    share_new_from_high = np.nan
-
-# 4. Average Meetings Needed to Close a Deal
-if converted_mask.any():
-    avg_meetings_close = df.loc[converted_mask, "Meetings"].mean()
-else:
-    avg_meetings_close = np.nan
-
-# --- Customer value KPIs (needs CLV etc.) ---
-if not missing_clv:
-    # 7. Average Predicted Lifetime Value per Customer (₹)
-    avg_clv = df.loc[converted_mask, "CLV"].mean()
-
-    # 8. % of Customers in High-Value Segment
-    high_value_mask = (df["Value_Segment"] == "High") & converted_mask
-    if converted_mask.any():
-        pct_high_value_customers = high_value_mask.mean() * 100
-    else:
-        pct_high_value_customers = np.nan
-
-    # 9. % of Revenue from Top 20% Customers (by CLV)
-    cust_df = df[converted_mask].copy()
-    cust_df = cust_df.sort_values("CLV", ascending=False)
-    if not cust_df.empty:
-        top_n = max(1, int(np.ceil(0.2 * len(cust_df))))
-        top_rev = cust_df.head(top_n)["Revenue"].sum()
-        total_rev = cust_df["Revenue"].sum()
-        pct_rev_top20 = (top_rev / total_rev * 100) if total_rev > 0 else np.nan
-    else:
-        pct_rev_top20 = np.nan
-
-    # 10. % of Customers at High Churn Risk
-    if "High_Churn" in df.columns and converted_mask.any():
-        pct_high_churn_customers = (
-            df.loc[converted_mask, "High_Churn"].mean() * 100
-        )
-    else:
-        pct_high_churn_customers = np.nan
-
-    # 11. Best-Performing Channel Conversion Rate (%)
-    channel_conv = (
-        df.groupby("Lead_Source")["Converted"]
-        .mean()
-        .sort_values(ascending=False)
-        * 100
-    )
-    if not channel_conv.empty:
-        best_channel = channel_conv.index[0]
-        best_channel_conv = channel_conv.iloc[0]
-    else:
-        best_channel = "N/A"
-        best_channel_conv = np.nan
-
-    # 12. Average Engagement Score of Customers
-    avg_engagement_customers = df.loc[converted_mask, "Engagement_Score"].mean()
-else:
-    avg_clv = pct_high_value_customers = pct_rev_top20 = np.nan
-    pct_high_churn_customers = best_channel_conv = avg_engagement_customers = np.nan
-    best_channel = "N/A"
-
-# Helper to format numbers
-def fmt_pct(x):
-    return "-" if pd.isna(x) else f"{x:0.1f}%"
-
-def fmt_num(x, decimals=1):
-    return "-" if pd.isna(x) else f"{x:0.{decimals}f}"
-
-def fmt_rupees(x):
-    return "-" if pd.isna(x) else f"₹{x:,.0f}"
-
-
-# --------------------------------------------------
-# 8. LAYOUT: TABS
-# --------------------------------------------------
-tab_lead, tab_value = st.tabs(
-    ["📊 Lead Scoring & Funnel", "💰 Customer Value & Retention"]
+preprocess = ColumnTransformer(
+    transformers=[
+        ("cat", OneHotEncoder(handle_unknown="ignore", sparse=False), cat_cols),
+    ],
+    remainder="passthrough",
 )
 
-# --------------------------------------------------
-# 8A. LEAD SCORING & FUNNEL TAB
-# --------------------------------------------------
-with tab_lead:
-    st.markdown("### Lead Scoring & Funnel KPIs")
+rf = RandomForestClassifier(
+    n_estimators=250,
+    random_state=42,
+    class_weight="balanced_subsample",
+    max_depth=None,
+    min_samples_leaf=2,
+)
 
-    c1, c2, c3, c4 = st.columns(4)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
 
-    with c1:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-label">Overall Lead Conversion Rate</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-value">{fmt_pct(overall_conv)}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="metric-caption">Converted ÷ Total leads</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+pipeline = rf  # we'll manually transform then fit; to keep things simple
+X_train_transformed = preprocess.fit_transform(X_train)
+rf.fit(X_train_transformed, y_train)
 
-    with c2:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-label">Conversion Rate of High-Priority Leads</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-value">{fmt_pct(high_priority_conv)}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="metric-caption">Based on AI lead score ≥ 70</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+# Score all leads
+X_all_transformed = preprocess.transform(X)
+ai_score_proba = rf.predict_proba(X_all_transformed)[:, 1]
+df["AI_Score"] = ai_score_proba * 100  # 0-100 scale
 
-    with c3:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-label">Share of New Customers from High-Priority Leads</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-value">{fmt_pct(share_new_from_high)}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="metric-caption">Among all converted customers</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+# Priority bands
+def score_band(score):
+    if score >= 70:
+        return "High"
+    elif score >= 40:
+        return "Medium"
+    else:
+        return "Low"
 
-    with c4:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-label">Average Meetings Needed to Close a Deal</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-value">{fmt_num(avg_meetings_close, 2)}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="metric-caption">Average meetings for converted leads</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
 
-    st.write("")
-    st.markdown("### Lead Scoring & Funnel Visualisations")
+df["Priority_Band"] = df["AI_Score"].apply(score_band)
 
-    # 1. Conversion rate by lead score band
-    bins = [0, 30, 50, 70, 85, 100]
-    labels = ["0–30", "31–50", "51–70", "71–85", "86–100"]
-    df["Score_Band"] = pd.cut(df["Lead_Score"], bins=bins, labels=labels, include_lowest=True)
+# ------------------------------------------------------------
+# HELPER FUNCTIONS
+# ------------------------------------------------------------
+def pct(x):
+    return float(x) * 100.0
 
-    conv_by_band = (
-        df.groupby("Score_Band")["Converted"]
-        .mean()
-        .reset_index()
+
+def safe_pct(numer, denom):
+    if denom == 0:
+        return None
+    return pct(numer / denom)
+
+
+def format_value(v, fmt="{:,.1f}%"):
+    if v is None or (isinstance(v, (float, int)) and np.isnan(v)):
+        return "—"
+    return fmt.format(v)
+
+
+def metric_card(label, value, caption=None, fmt="{:,.1f}%"):
+    st.markdown(
+        f"""
+        <div class="metric-card">
+            <div class="metric-label">{label}</div>
+            <div class="metric-value">{format_value(value, fmt)}</div>
+            <div class="metric-caption">{caption or ""}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    conv_by_band["Conversion_Rate"] = conv_by_band["Converted"] * 100
 
+
+# ------------------------------------------------------------
+# KPI CALCULATIONS
+# ------------------------------------------------------------
+total_leads = len(df)
+converted = df["Converted"].sum()
+non_converted = total_leads - converted
+
+overall_conv = safe_pct(converted, total_leads)
+
+high_band = df[df["Priority_Band"] == "High"]
+high_conv = safe_pct(high_band["Converted"].sum(), len(high_band)) if len(high_band) else None
+
+converted_df = df[df["Converted"] == 1]
+converted_high = converted_df[converted_df["Priority_Band"] == "High"]
+share_new_from_high = safe_pct(len(converted_high), len(converted_df)) if len(converted_df) else None
+
+avg_meetings_closed = (
+    converted_df["Meetings"].mean() if len(converted_df) else None
+)
+
+# Customer-value-related columns (optional)
+has_clv = "CLV" in df.columns
+has_revenue = "Revenue" in df.columns
+has_tenure = "Tenure_Months" in df.columns
+has_churn = "Churn_Risk" in df.columns
+
+if has_clv:
+    avg_clv = df["CLV"].mean()
+    high_value_threshold = df["CLV"].quantile(0.75)
+    high_value_customers = df[df["CLV"] >= high_value_threshold]
+    pct_high_value_customers = safe_pct(len(high_value_customers), total_leads)
+
+    if has_revenue:
+        # If you have a separate Revenue column, use that;
+        # otherwise CLV is used as a value proxy for revenue contribution charts.
+        value_col = "Revenue"
+    else:
+        value_col = "CLV"
+
+    df_sorted_value = df.sort_values(value_col, ascending=False)
+    top_20_count = max(1, int(0.2 * total_leads))
+    top_20_customers = df_sorted_value.head(top_20_count)
+    pct_revenue_top20 = safe_pct(
+        top_20_customers[value_col].sum(), df[value_col].sum()
+    )
+else:
+    avg_clv = None
+    pct_high_value_customers = None
+    pct_revenue_top20 = None
+
+if has_churn:
+    pct_high_churn_risk = safe_pct(
+        (df["Churn_Risk"] > 0).sum(), total_leads
+    )
+else:
+    pct_high_churn_risk = None
+
+# Channel conversion metrics
+channel_conv = (
+    df.groupby("Lead_Source")["Converted"].mean().sort_values(ascending=False)
+)
+if len(channel_conv) > 0:
+    best_channel = channel_conv.index[0]
+    best_channel_rate = pct(channel_conv.iloc[0])
+    best_channel_label = f"{best_channel} ({best_channel_rate:.1f}%)"
+else:
+    best_channel_label = None
+
+avg_engagement_customers = df["Engagement_Score"].mean()
+
+# ------------------------------------------------------------
+# TABS: KPI CARDS
+# ------------------------------------------------------------
+tab_lead, tab_value = st.tabs(["📈 Lead Scoring & Funnel", "💰 Customer Value & Retention"])
+
+with tab_lead:
+    st.markdown('<div class="section-header">Lead Scoring & Funnel KPIs</div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-row">', unsafe_allow_html=True)
+
+    metric_card(
+        "Overall Lead Conversion Rate",
+        overall_conv,
+        caption="Converted ÷ Total leads",
+    )
+    metric_card(
+        "Conversion Rate of High-Priority Leads",
+        high_conv,
+        caption="Among AI-scored High-priority leads",
+    )
+    metric_card(
+        "Share of New Customers from High-Priority Leads",
+        share_new_from_high,
+        caption="High-priority customers ÷ All new customers",
+    )
+    metric_card(
+        "Average Meetings Needed to Close a Deal",
+        avg_meetings_closed,
+        caption="Mean meetings for converted leads",
+        fmt="{:,.2f}",
+    )
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with tab_value:
+    st.markdown('<div class="section-header">Customer Value & Retention KPIs</div>', unsafe_allow_html=True)
+
+    if not (has_clv or has_revenue or has_churn):
+        st.warning(
+            "To fully populate value & retention KPIs, add these columns to your dataset: "
+            "`CLV`, `Revenue`, `Tenure_Months`, `Churn_Risk`.\n\n"
+            "Lead-funnel KPIs and non-CLV charts are still computed from your current file."
+        )
+
+    st.markdown('<div class="metric-row">', unsafe_allow_html=True)
+
+    metric_card(
+        "Average Predicted Lifetime Value per Customer (₹)",
+        avg_clv,
+        caption="Mean CLV across all leads/customers",
+        fmt="₹{:,.0f}",
+    )
+    metric_card(
+        "% of Customers in High-Value Segment",
+        pct_high_value_customers,
+        caption="Customers with CLV ≥ 75th percentile",
+    )
+    metric_card(
+        "% of Revenue from Top 20% Customers",
+        pct_revenue_top20,
+        caption="Share of value from top 20% by CLV / Revenue",
+    )
+    metric_card(
+        "% of Customers at High Churn Risk",
+        pct_high_churn_risk,
+        caption="Churn_Risk > 0",
+    )
+    metric_card(
+        "Best-Performing Channel Conversion Rate",
+        best_channel_rate if best_channel_label else None,
+        caption=best_channel_label or "No channel information",
+    )
+    metric_card(
+        "Average Engagement Score of Customers",
+        avg_engagement_customers,
+        caption="Mean Engagement_Score across all leads",
+        fmt="{:,.1f}",
+    )
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ------------------------------------------------------------
+# CHARTS (10 – NO TABLES)
+# ------------------------------------------------------------
+st.markdown('<div class="section-header">Lead & Value Visualizations</div>', unsafe_allow_html=True)
+
+# 1 & 2: Conversion rate by score band, lead mix by priority level
+col1, col2 = st.columns(2)
+with col1:
+    conv_by_band = (
+        df.groupby("Priority_Band")["Converted"]
+        .mean()
+        .reindex(["High", "Medium", "Low"])
+        .dropna()
+        * 100
+    )
     fig1 = px.bar(
         conv_by_band,
-        x="Score_Band",
-        y="Conversion_Rate",
-        color="Conversion_Rate",
-        color_continuous_scale="Blues",
-        labels={"Score_Band": "Lead Score Band", "Conversion_Rate": "Conversion Rate (%)"},
-        title="Conversion Rate by Lead Score Band",
+        x=conv_by_band.index,
+        y=conv_by_band.values,
+        labels={"x": "Priority Band", "y": "Conversion Rate (%)"},
+        color=conv_by_band.index,
+        color_discrete_sequence=px.colors.sequential.Blues_r,
     )
+    fig1.update_layout(title="Conversion Rate by Lead Score Band", showlegend=False)
+    st.plotly_chart(fig1, use_container_width=True)
 
-    # 2. Lead mix by priority level (donut)
-    mix_priority = df["Priority_Level"].value_counts().reset_index()
-    mix_priority.columns = ["Priority_Level", "Count"]
-
+with col2:
+    band_mix = df["Priority_Band"].value_counts().reindex(["High", "Medium", "Low"]).dropna()
     fig2 = px.pie(
-        mix_priority,
-        names="Priority_Level",
-        values="Count",
-        hole=0.55,
-        color="Priority_Level",
-        color_discrete_map={"High": "#1b5e20", "Medium": "#ffb300", "Low": "#c62828"},
-        title="Lead Mix by Priority Level",
+        values=band_mix.values,
+        names=band_mix.index,
+        hole=0.5,
+        color=band_mix.index,
+        color_discrete_sequence=px.colors.sequential.Teal_r,
     )
+    fig2.update_layout(title="Lead Mix by Priority Level")
+    st.plotly_chart(fig2, use_container_width=True)
 
-    # 3. Conversion rate by lead source
-    conv_by_source = (
-        df.groupby("Lead_Source")["Converted"]
-        .mean()
-        .reset_index()
-    )
-    conv_by_source["Conversion_Rate"] = conv_by_source["Converted"] * 100
-
+# 3 & 4: Conversion rate by lead source, avg engagement by lead source
+col3, col4 = st.columns(2)
+with col3:
+    conv_by_source = df.groupby("Lead_Source")["Converted"].mean() * 100
+    conv_by_source = conv_by_source.sort_values(ascending=False)
     fig3 = px.bar(
         conv_by_source,
-        x="Lead_Source",
-        y="Conversion_Rate",
-        color="Conversion_Rate",
-        color_continuous_scale="Viridis",
-        title="Conversion Rate by Lead Source",
-        labels={"Conversion_Rate": "Conversion Rate (%)"},
+        x=conv_by_source.index,
+        y=conv_by_source.values,
+        labels={"x": "Lead Source", "y": "Conversion Rate (%)"},
+        color=conv_by_source.values,
+        color_continuous_scale="Blues",
     )
+    fig3.update_layout(title="Conversion Rate by Lead Source", coloraxis_showscale=False)
+    st.plotly_chart(fig3, use_container_width=True)
 
-    # 4. Avg engagement by lead source
-    eng_by_source = (
-        df.groupby("Lead_Source")["Engagement_Score"]
-        .mean()
-        .reset_index()
-    )
-
+with col4:
+    eng_by_source = df.groupby("Lead_Source")["Engagement_Score"].mean()
+    eng_by_source = eng_by_source.sort_values(ascending=False)
     fig4 = px.bar(
         eng_by_source,
-        x="Lead_Source",
-        y="Engagement_Score",
-        color="Engagement_Score",
-        color_continuous_scale="Plasma",
-        title="Average Engagement Score by Lead Source",
+        x=eng_by_source.index,
+        y=eng_by_source.values,
+        labels={"x": "Lead Source", "y": "Avg Engagement Score"},
+        color=eng_by_source.values,
+        color_continuous_scale="Teal",
     )
+    fig4.update_layout(title="Average Engagement by Lead Source", coloraxis_showscale=False)
+    st.plotly_chart(fig4, use_container_width=True)
 
-    # 5. Avg AI score by industry
-    ai_by_industry = (
-        df.groupby("Industry")["Lead_Score"]
-        .mean()
-        .reset_index()
-    )
-
+# 5 & 6: Avg AI score by industry, Avg CLV by industry
+col5, col6 = st.columns(2)
+with col5:
+    ai_by_industry = df.groupby("Industry")["AI_Score"].mean().sort_values(ascending=False)
     fig5 = px.bar(
         ai_by_industry,
-        x="Industry",
-        y="Lead_Score",
-        color="Lead_Score",
-        color_continuous_scale="Tealgrn",
-        title="Average AI Lead Score by Industry",
-        labels={"Lead_Score": "Average Lead Score (0–100)"},
+        x=ai_by_industry.index,
+        y=ai_by_industry.values,
+        labels={"x": "Industry", "y": "Avg AI Lead Score"},
+        color=ai_by_industry.values,
+        color_continuous_scale="Purples",
     )
-
-    # Layout for lead tab charts
-    r1c1, r1c2 = st.columns(2)
-    with r1c1:
-        st.plotly_chart(fig1, use_container_width=True)
-    with r1c2:
-        st.plotly_chart(fig2, use_container_width=True)
-
-    r2c1, r2c2 = st.columns(2)
-    with r2c1:
-        st.plotly_chart(fig3, use_container_width=True)
-    with r2c2:
-        st.plotly_chart(fig4, use_container_width=True)
-
+    fig5.update_layout(title="Average AI Lead Score by Industry", coloraxis_showscale=False)
     st.plotly_chart(fig5, use_container_width=True)
 
-
-# --------------------------------------------------
-# 8B. CUSTOMER VALUE & RETENTION TAB
-# --------------------------------------------------
-with tab_value:
-    st.markdown("### Customer Value & Retention KPIs")
-
-    c1, c2, c3, c4 = st.columns(4)
-    c5, c6, _, _ = st.columns(4)
-
-    with c1:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-label">Average Predicted Lifetime Value per Customer</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-value">{fmt_rupees(avg_clv)}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="metric-caption">Mean CLV for converted customers</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with c2:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-label">% of Customers in High-Value Segment</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-value">{fmt_pct(pct_high_value_customers)}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="metric-caption">Top CLV tier (High)</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with c3:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-label">% of Revenue from Top 20% Customers</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-value">{fmt_pct(pct_rev_top20)}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="metric-caption">By revenue among customers</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with c4:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-label">% of Customers at High Churn Risk</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-value">{fmt_pct(pct_high_churn_customers)}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="metric-caption">Churn risk ≥ 0.60</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with c5:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-label">Best-Performing Channel Conversion Rate</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-value">{fmt_pct(best_channel_conv)}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-caption">Channel: {best_channel}</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with c6:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-label">Average Engagement Score of Customers</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-value">{fmt_num(avg_engagement_customers,1)}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="metric-caption">Only for converted customers</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    st.write("")
-    st.markdown("### Customer Value & Retention Visualisations")
-
-    if missing_clv:
-        st.info(
-            "Customer value charts require CLV, Tenure_Months, Churn_Risk, and Revenue columns. "
-            "Add them to your CSV to unlock full visuals."
-        )
-    else:
-        # 6. Avg CLV by industry
-        clv_industry = (
-            df[converted_mask]
-            .groupby("Industry")["CLV"]
-            .mean()
-            .reset_index()
-        )
-
+with col6:
+    if has_clv:
+        clv_by_industry = df.groupby("Industry")["CLV"].mean().sort_values(ascending=False)
         fig6 = px.bar(
-            clv_industry,
-            x="Industry",
-            y="CLV",
-            color="CLV",
-            color_continuous_scale="Sunset",
-            labels={"CLV": "Average CLV (₹)"},
-            title="Average CLV by Industry",
+            clv_by_industry,
+            x=clv_by_industry.index,
+            y=clv_by_industry.values,
+            labels={"x": "Industry", "y": "Avg CLV (₹)"},
+            color=clv_by_industry.values,
+            color_continuous_scale="Oranges",
         )
+        fig6.update_layout(title="Average CLV by Industry", coloraxis_showscale=False)
+        st.plotly_chart(fig6, use_container_width=True)
+    else:
+        st.info("Add a **CLV** column to see *Average CLV by Industry*.")
 
-        # 7. Avg CLV by tenure bucket
-        tenure_bins = [0, 6, 12, 24, 36, 120]
-        tenure_labels = ["0–6", "7–12", "13–24", "25–36", "37+"]
-
-        df["Tenure_Bucket"] = pd.cut(
-            df["Tenure_Months"], bins=tenure_bins, labels=tenure_labels, include_lowest=True
-        )
-
-        clv_tenure = (
-            df[converted_mask]
-            .groupby("Tenure_Bucket")["CLV"]
-            .mean()
-            .reset_index()
-        )
-
+# 7 & 8: Avg CLV by tenure bucket, CLV distribution
+col7, col8 = st.columns(2)
+with col7:
+    if has_clv and has_tenure:
+        bins = [-1, 6, 12, 24, np.inf]
+        labels = ["< 6 months", "6–12 months", "12–24 months", "24+ months"]
+        df["Tenure_Bucket"] = pd.cut(df["Tenure_Months"], bins=bins, labels=labels)
+        clv_by_tenure = df.groupby("Tenure_Bucket")["CLV"].mean()
         fig7 = px.bar(
-            clv_tenure,
-            x="Tenure_Bucket",
-            y="CLV",
-            color="CLV",
-            color_continuous_scale="RdPu",
-            labels={"CLV": "Average CLV (₹)", "Tenure_Bucket": "Tenure (months)"},
-            title="Average CLV by Tenure Bucket",
+            clv_by_tenure,
+            x=clv_by_tenure.index.astype(str),
+            y=clv_by_tenure.values,
+            labels={"x": "Tenure Bucket", "y": "Avg CLV (₹)"},
+            color=clv_by_tenure.values,
+            color_continuous_scale="Greens",
         )
+        fig7.update_layout(title="Average CLV by Tenure Bucket", coloraxis_showscale=False)
+        st.plotly_chart(fig7, use_container_width=True)
+    else:
+        st.info("Add **CLV** and **Tenure_Months** columns to see *CLV by Tenure Bucket*.")
 
-        # 8. CLV distribution
+with col8:
+    if has_clv:
         fig8 = px.histogram(
-            df[converted_mask],
+            df,
             x="CLV",
             nbins=30,
-            color_discrete_sequence=["#1e88e5"],
-            title="CLV Distribution for Customers",
+            marginal="box",
             labels={"CLV": "Customer Lifetime Value (₹)"},
+            color_discrete_sequence=["#0ea5e9"],
         )
+        fig8.update_layout(title="CLV Distribution")
+        st.plotly_chart(fig8, use_container_width=True)
+    else:
+        st.info("Add a **CLV** column to see the *CLV Distribution* chart.")
 
-        # 9. Avg time to decision by score band
-        time_by_band = (
-            df.groupby("Score_Band")["Decision_Time_Days"]
-            .mean()
-            .reset_index()
-        )
+# 9 & 10: Avg time to decision by score band, Avg meetings by industry
+col9, col10 = st.columns(2)
+with col9:
+    time_by_band = (
+        df.groupby("Priority_Band")["Decision_Time_Days"]
+        .mean()
+        .reindex(["High", "Medium", "Low"])
+        .dropna()
+    )
+    fig9 = px.bar(
+        time_by_band,
+        x=time_by_band.index,
+        y=time_by_band.values,
+        labels={"x": "Priority Band", "y": "Avg Time to Decision (days)"},
+        color=time_by_band.values,
+        color_continuous_scale="RdPu",
+    )
+    fig9.update_layout(title="Average Time to Decision by Score Band", coloraxis_showscale=False)
+    st.plotly_chart(fig9, use_container_width=True)
 
-        fig9 = px.line(
-            time_by_band,
-            x="Score_Band",
-            y="Decision_Time_Days",
-            markers=True,
-            title="Average Time to Decision by Lead Score Band",
-            labels={"Decision_Time_Days": "Avg Time to Decision (days)"},
-        )
-
-        # 10. Avg meetings by lead source
-        meetings_by_source = (
-            df.groupby("Lead_Source")["Meetings"]
-            .mean()
-            .reset_index()
-        )
-
-        fig10 = px.bar(
-            meetings_by_source,
-            x="Lead_Source",
-            y="Meetings",
-            color="Meetings",
-            color_continuous_scale="YlGnBu",
-            title="Average Meetings by Lead Source",
-        )
-
-        # Layout for value tab charts
-        r1c1, r1c2 = st.columns(2)
-        with r1c1:
-            st.plotly_chart(fig6, use_container_width=True)
-        with r1c2:
-            st.plotly_chart(fig7, use_container_width=True)
-
-        r2c1, r2c2 = st.columns(2)
-        with r2c1:
-            st.plotly_chart(fig8, use_container_width=True)
-        with r2c2:
-            st.plotly_chart(fig9, use_container_width=True)
-
-        st.plotly_chart(fig10, use_container_width=True)
+with col10:
+    meetings_by_industry = df.groupby("Industry")["Meetings"].mean().sort_values(ascending=False)
+    fig10 = px.bar(
+        meetings_by_industry,
+        x=meetings_by_industry.index,
+        y=meetings_by_industry.values,
+        labels={"x": "Industry", "y": "Avg Meetings per Lead"},
+        color=meetings_by_industry.values,
+        color_continuous_scale="YlGnBu",
+    )
+    fig10.update_layout(title="Average Meetings by Industry", coloraxis_showscale=False)
+    st.plotly_chart(fig10, use_container_width=True)
