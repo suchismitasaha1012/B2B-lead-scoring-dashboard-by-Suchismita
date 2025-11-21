@@ -325,6 +325,30 @@ avg_engagement_customers = df["Engagement_Score"].mean()
 # TABS: KPI CARDS
 # ------------------------------------------------------------
 tab_lead, tab_value = st.tabs(["📈 Lead Scoring & Funnel", "💰 Customer Value & Retention"])
+# =============================
+# 🔥 TOP 10 LEADS (BASED ON AI SCORE)
+# =============================
+st.subheader("🔝 Top 10 Priority Leads")
+
+# Ensure sorted leads exist
+if "AI_Lead_Score" in df.columns:
+    top_10 = df.sort_values(by="AI_Lead_Score", ascending=False).head(10)
+
+    # Only show important business fields
+    cols_to_show = [
+        "Lead_ID", "Industry", "Company_Size", "Location",
+        "Engagement_Score", "AI_Lead_Score", "Converted"
+    ]
+
+    st.dataframe(
+        top_10[cols_to_show],
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.markdown("These are the **highest-priority leads**, sorted by predicted AI score.")
+else:
+    st.info("AI scores not yet computed. Upload a valid dataset to view Top 10 leads.")
 
 with tab_lead:
     st.markdown('<div class="section-header">Lead Scoring & Funnel KPIs</div>', unsafe_allow_html=True)
