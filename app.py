@@ -326,42 +326,81 @@ avg_engagement_customers = df["Engagement_Score"].mean()
 # ------------------------------------------------------------
 tab_lead, tab_value = st.tabs(["📈 Lead Scoring & Funnel", "💰 Customer Value & Retention"])
 
-# =========================================================
-# 🔝 TOP 10 PRIORITY LEADS (BASED ON MODEL AI SCORE)
-# =========================================================
-st.markdown("## 🔝 Top 10 Priority Leads")
+# ================================
+# 🏆 TOP 10 PRIORITY LEADS
+# ================================
 
-if df is None:
-    st.info("Upload a CSV file to see the Top 10 leads.")
+st.markdown("### 🏆 Top 10 Priority Leads")
+
+if df is None or df.empty:
+    st.info("AI scores not yet computed. Upload a valid CSV dataset to view Top 10 leads.")
 else:
-    # Make sure we have model scores on this dataframe
-    df_scored = score_leads(df).copy()   # use your existing scoring function
+    df_top = df.copy()
 
-    if "AI_Score" not in df_scored.columns:
-        st.warning("AI score could not be computed. Check the input columns.")
-    else:
-        # Sort by AI_Score (highest first) and keep top 10
-        cols_for_view = [
-            "Lead_ID",
-            "Industry",
-            "Lead_Source",
-            "Company_Size",
-            "Engagement_Score",
-            "AI_Score",
-            "Converted",
-        ]
-        cols_for_view = [c for c in cols_for_view if c in df_scored.columns]
+    # --- 1. Build a numeric priority score from existing columns ---
+    def norm(series: pd.Series) -> pd.Series:
+        """Simple min–max normalisation to 0–1."""
+        if series.max() == series.min():
+            # avoid division by zero when all values are same
+            return pd.Series(0.5, index=series.index, dtype="float64")
+        return (series - series.min()) / (series.max() - series.min())
 
-        top10 = (
-            df_scored
-            .sort_values("AI_Score", ascending=False)
-            .head(10)[cols_for_view]
-            .reset_index(drop=True)
-        )
-        top10.index = top10.index + 1  # show 1–10 instead of 0–9
+    score = 0
 
-        st.dataframe(top10, use_container_width=True)
+    # Positive contributors (higher is better)
+    if "Engagement_Score" in df_top.columns:
+        score += 0.35 * norm(df_top["Engagement_Score"])
+    if "Website_Visits" in df_top.columns:
+        score += 0.10 * norm(df_top["Website_Visits"])
+    if "Email_Clicks" in df_top.columns:
+        score += 0.10 * norm(df_top["Email_Clicks"])
+    if "Meetings" in df_top.columns:
+        score += 0.15 * norm(df_top["Meetings"])
+    if "Annual_Revenue_INR_Lakhs" in df_top.columns:
+        score += 0.15 * norm(df_top["Annual_Revenue_INR_Lakhs"])
+    if "CLV" in df_top.columns:
+        score += 0.15 * norm(df_top["CLV"])
 
+    # Negative contributors (lower is better)
+    if "Decision_Time_Days" in df_top.columns:
+        score += 0.10 * (1 - norm(df_top["Decision_Time_Days"]))
+    if "Churn_Risk" in df_top.columns:
+        score += 0.15 * (1 - norm(df_top["Churn_Risk"]))
+
+    df_top["Priority_Score"] = score
+
+    # --- 2. Pick Top 10 leads by this score ---
+    top10 = (
+        df_top.sort_values("Priority_Score", ascending=False)
+              .head(10)
+              .copy()
+    )
+
+    # Select columns to display (only keep ones that exist in the file)
+    display_cols = [
+        "Lead_ID",
+        "Industry",
+        "Lead_Source",
+        "Engagement_Score",
+        "Website_Visits",
+        "Email_Clicks",
+        "Meetings",
+        "Annual_Revenue_INR_Lakhs",
+        "CLV",
+        "Decision_Time_Days",
+        "Churn_Risk",
+        "Priority_Score",
+    ]
+    display_cols = [c for c in display_cols if c in top10.columns]
+
+    st.dataframe(
+        top10[display_cols]
+            .style.format({"Priority_Score": "{:.2f}"}).background_gradient(
+                subset=["Priority_Score"], cmap="YlOrRd"
+            ),
+        use_container_width=True,
+        hide_index=True,
+    )
 
 with tab_lead:
     st.markdown('<div class="section-header">Lead Scoring & Funnel KPIs</div>', unsafe_allow_html=True)
