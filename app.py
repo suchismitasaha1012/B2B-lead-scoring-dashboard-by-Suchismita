@@ -135,7 +135,7 @@ if y.nunique() < 2:
 # 4. BUILD PIPELINE & TRAIN MODEL
 # ------------------------------------------------
 categorical_transformer = OneHotEncoder(
-    handle_unknown="ignore", sparse=False
+    handle_unknown="ignore"
 )
 
 preprocess = ColumnTransformer(
