@@ -32,21 +32,16 @@ st.markdown(
 # ----------------------------------------------------
 @st.cache_data
 def load_lead_data(uploaded_file):
-    if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file)
-    else:
-        # Fallback to sample data shipped with the repo
-        df = pd.read_csv("lead_scoring_data.csv")
-    return df
+    if uploaded_file is None:
+        return None           # ⬅️ do NOT try to read a local CSV
+    return pd.read_csv(uploaded_file)
 
 
 @st.cache_data
 def load_customer_data(uploaded_file):
-    if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file)
-    else:
-        df = pd.read_csv("customer_clv_data.csv")
-    return df
+     if uploaded_file is None:
+        return None
+    return pd.read_csv(uploaded_file)
 
 
 st.sidebar.header("1. Upload Data (optional)")
