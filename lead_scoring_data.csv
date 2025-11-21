@@ -1,0 +1,101 @@
+Lead_ID,Industry,Company_Size,Annual_Revenue_INR_Lakhs,Location,Website_Visits,Email_Clicks,Meetings,Lead_Source,Engagement_Score,Product_Interest,Decision_Time_Days,Converted
+L001,Healthcare,24,482,East,12,5,3,Event,43,High,32,0
+L002,Finance,310,240,East,22,14,1,Email Campaign,47,High,78,0
+L003,Manufacturing,74,199,East,22,5,3,LinkedIn,27,High,43,0
+L004,Finance,354,234,West,46,10,1,Email Campaign,55,Medium,61,0
+L005,Finance,336,394,West,30,11,1,Event,27,High,21,1
+L006,Retail,18,386,East,38,4,2,Cold Call,77,Medium,48,1
+L007,Manufacturing,353,292,West,38,0,1,Email Campaign,79,High,29,1
+L008,Manufacturing,138,967,North,45,7,0,Cold Call,69,High,21,0
+L009,Manufacturing,145,642,North,8,4,4,LinkedIn,47,Medium,17,1
+L010,Finance,481,637,West,27,11,4,Cold Call,60,Medium,88,1
+L011,Healthcare,72,982,West,27,11,3,Cold Call,83,High,29,0
+L012,Manufacturing,148,754,East,34,11,1,Referral,46,Medium,72,0
+L013,Education,90,268,South,21,4,0,Referral,82,High,14,1
+L014,Finance,401,368,West,30,6,3,Referral,36,Medium,71,0
+L015,Retail,172,719,North,33,3,2,Cold Call,92,Low,22,1
+L016,Healthcare,428,465,East,28,5,3,Event,52,Low,38,0
+L017,Education,298,420,West,47,12,3,Cold Call,96,Low,12,1
+L018,Education,388,658,North,33,3,1,Event,48,Low,44,0
+L019,Retail,270,327,North,5,13,2,Event,32,Low,87,0
+L020,Healthcare,499,686,South,48,14,3,Referral,65,High,46,0
+L021,Finance,240,234,East,19,2,0,Email Campaign,54,Low,45,1
+L022,IT,50,828,East,4,6,0,LinkedIn,25,Low,10,1
+L023,Healthcare,37,243,South,35,7,4,Referral,88,Low,56,0
+L024,Retail,144,693,South,49,3,2,Referral,66,Low,30,0
+L025,Education,210,673,East,17,12,2,Email Campaign,44,Medium,68,1
+L026,Finance,337,984,East,44,1,4,LinkedIn,85,High,63,0
+L027,Healthcare,277,836,West,28,11,3,Cold Call,29,Low,60,1
+L028,IT,427,383,West,30,9,2,Cold Call,75,Low,63,0
+L029,IT,42,681,South,29,13,0,Referral,49,Low,74,0
+L030,Manufacturing,57,617,West,46,2,0,LinkedIn,24,High,37,0
+L031,Manufacturing,416,481,North,6,0,1,Referral,52,Medium,57,0
+L032,Retail,71,242,West,35,7,2,Event,84,High,26,1
+L033,Healthcare,225,701,West,41,14,3,Referral,37,Medium,25,0
+L034,Healthcare,302,122,North,37,2,4,Referral,68,Low,74,0
+L035,Education,108,839,South,24,11,4,Cold Call,30,Low,74,1
+L036,Education,181,506,North,29,9,3,Cold Call,45,High,8,0
+L037,Education,369,451,West,49,6,1,Cold Call,82,High,79,0
+L038,Manufacturing,223,573,South,46,9,4,Event,78,Medium,66,1
+L039,Healthcare,484,277,West,31,4,2,Cold Call,46,Medium,66,1
+L040,Healthcare,44,519,North,35,9,1,LinkedIn,68,High,28,0
+L041,IT,458,816,North,33,4,2,Email Campaign,96,Medium,59,1
+L042,Manufacturing,236,395,West,21,13,0,LinkedIn,52,High,13,1
+L043,Finance,110,396,East,32,6,1,LinkedIn,20,Medium,7,0
+L044,Manufacturing,440,122,East,23,14,4,Cold Call,40,High,35,0
+L045,Finance,471,622,North,33,8,1,Email Campaign,74,High,44,1
+L046,IT,140,634,North,3,11,1,Email Campaign,25,High,40,1
+L047,Retail,266,961,East,18,4,1,Email Campaign,88,Medium,28,0
+L048,Healthcare,14,90,East,25,0,1,Event,24,Medium,10,1
+L049,IT,227,708,West,42,9,2,Cold Call,22,Medium,70,1
+L050,Healthcare,264,122,West,31,9,0,Email Campaign,72,High,88,0
+L051,Education,407,11,East,3,0,3,Event,42,Medium,79,0
+L052,Retail,368,651,West,40,14,1,Referral,72,Medium,8,0
+L053,Retail,292,229,West,46,1,4,Referral,56,High,83,1
+L054,IT,402,575,South,24,13,1,Event,93,Low,10,0
+L055,Retail,216,864,West,32,5,4,Event,93,High,55,0
+L056,Finance,24,745,North,47,8,2,Cold Call,36,Medium,66,1
+L057,Retail,355,234,West,22,7,4,Cold Call,97,High,61,1
+L058,Healthcare,51,394,West,23,12,3,Referral,92,Low,70,0
+L059,Healthcare,389,412,East,2,4,0,Email Campaign,20,High,83,1
+L060,Healthcare,470,647,North,27,0,4,Referral,70,Medium,79,0
+L061,Healthcare,188,139,West,42,12,4,Email Campaign,64,Low,12,1
+L062,Finance,72,62,West,2,6,0,Email Campaign,96,Medium,30,0
+L063,Manufacturing,361,693,South,26,14,3,Cold Call,23,Low,55,0
+L064,Education,240,739,West,17,4,1,LinkedIn,81,Low,49,1
+L065,IT,250,681,West,40,5,4,LinkedIn,84,High,48,0
+L066,Healthcare,61,719,South,33,12,0,Event,51,High,9,0
+L067,Retail,105,425,East,9,6,2,Cold Call,53,Medium,74,1
+L068,Healthcare,397,256,West,43,2,0,Email Campaign,91,High,30,1
+L069,Retail,231,845,South,48,11,2,LinkedIn,58,High,72,1
+L070,Education,494,448,North,39,9,3,Email Campaign,45,Low,23,1
+L071,Education,416,212,East,29,2,1,LinkedIn,53,High,88,0
+L072,Education,240,193,North,42,4,0,LinkedIn,73,Low,24,0
+L073,Retail,246,132,North,26,5,4,LinkedIn,22,Low,16,0
+L074,Healthcare,152,410,South,35,8,3,Cold Call,69,Low,51,0
+L075,Education,180,776,West,25,12,0,Referral,31,Medium,5,1
+L076,Finance,38,303,South,24,13,4,Email Campaign,84,Medium,18,0
+L077,Retail,45,289,South,13,11,0,Cold Call,73,Medium,68,0
+L078,Retail,22,846,South,7,4,2,Cold Call,24,Low,42,0
+L079,Healthcare,169,893,South,36,14,0,Cold Call,76,Medium,41,1
+L080,Retail,336,619,East,45,0,0,Cold Call,36,Medium,15,0
+L081,Retail,196,207,West,20,13,0,Cold Call,66,High,81,0
+L082,Education,252,991,North,1,13,3,Event,42,Medium,7,0
+L083,Healthcare,95,916,North,8,13,0,Email Campaign,98,Medium,37,1
+L084,Education,293,520,West,46,3,4,Cold Call,33,Low,10,0
+L085,Education,75,761,North,16,4,2,Email Campaign,85,Low,54,1
+L086,Healthcare,179,153,West,14,11,2,Event,94,Low,14,1
+L087,IT,54,618,North,12,9,0,Event,70,Low,9,0
+L088,Education,71,210,South,23,9,3,Email Campaign,57,Low,27,1
+L089,Finance,450,133,North,15,4,3,LinkedIn,83,Low,14,1
+L090,Finance,143,196,West,28,6,4,Referral,57,Medium,48,1
+L091,Retail,293,335,West,34,3,0,LinkedIn,69,Low,6,0
+L092,Finance,37,473,West,2,0,2,LinkedIn,49,Low,17,0
+L093,Retail,117,358,West,32,13,3,LinkedIn,98,High,44,1
+L094,IT,53,780,West,23,13,0,Cold Call,70,Medium,6,0
+L095,Healthcare,349,669,East,22,4,3,Event,82,Medium,88,1
+L096,Healthcare,295,773,East,25,6,3,LinkedIn,71,Medium,69,1
+L097,Healthcare,455,964,North,22,9,2,Event,57,Low,67,1
+L098,Finance,340,941,West,22,9,1,Email Campaign,98,Low,77,0
+L099,IT,137,412,North,49,5,4,Referral,49,Low,21,0
+L100,Finance,357,355,West,42,4,4,Email Campaign,70,High,13,1
