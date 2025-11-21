@@ -120,7 +120,7 @@ def build_and_score_model(raw_df: pd.DataFrame):
     # Preprocessing + model pipeline
     categorical_transformer = OneHotEncoder(
         handle_unknown="ignore",
-        sparse=False  # important for scikit-learn 1.2.x on Streamlit Cloud
+        # important for scikit-learn 1.2.x on Streamlit Cloud
     )
 
     preprocessor = ColumnTransformer(
