@@ -390,7 +390,13 @@ with tab1:
     st.markdown("### 🔝 Top 10 High-Priority Leads")
     top10 = df.sort_values("AI_Score", ascending=False).head(10)
     display_cols = ["Lead_ID", "Industry", "AI_Score", "Engagement_Score", "Priority_Band", "Converted"]
-    st.dataframe(top10[display_cols].style.background_gradient(subset=["AI_Score"], cmap="Blues"), use_container_width=True, height=400)
+    
+    # Format the dataframe without styling for better compatibility
+    top10_display = top10[display_cols].copy()
+    top10_display["AI_Score"] = top10_display["AI_Score"].round(2)
+    top10_display["Engagement_Score"] = top10_display["Engagement_Score"].round(2)
+    
+    st.dataframe(top10_display, use_container_width=True, height=400)
     
     # Charts
     st.markdown("### 📊 Lead Analysis")
