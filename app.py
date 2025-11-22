@@ -284,7 +284,7 @@ st.markdown("""
     <div class="main-header">
         <h1 class="main-title">🚀 AI-Powered B2B Lead Intelligence Dashboard</h1>
         <p class="main-subtitle">Identify high-value leads, predict customer lifetime value, and optimize your sales funnel with AI-driven insights</p>
-        <span class="ai-badge">✨ AI Model Accuracy: 85% | Trained on 5000+ B2B Leads</span>
+        <span class="ai-badge">✨ AI Model Accuracy: 85% | Trained on 5000+ B2B Leads | Built by Suchismita 💜</span>
     </div>
 """, unsafe_allow_html=True)
 
